@@ -1,9 +1,9 @@
 ###############################################
-### RootSeven::Monitor						###
+### Porkchop::Monitor						###
 ### Communicate with the Root Seven Monitor	###
 ### module interface.						###
 ###############################################
-package RootSeven::Monitor;
+package Porkchop::Monitor;
 
 # Load Modules
 use 5.010000;
@@ -27,7 +27,7 @@ our @ISA = qw(Exporter);
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
-# This allows declaration	use RootSeven::Gallery ':all';
+# This allows declaration	use Porkchop::Gallery ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
@@ -694,16 +694,16 @@ __END__
 
 =head1 NAME
 
-RootSeven::Monitor - Perl extension for blah blah blah
+Porkchop::Monitor - Perl extension for blah blah blah
 
 =head1 SYNOPSIS
 
-  use RootSeven::Monitor;
+  use Porkchop::Monitor;
   blah blah blah
 
 =head1 DESCRIPTION
 
-Stub documentation for RootSeven::Monitor, created by h2xs. It looks like the
+Stub documentation for Porkchop::Monitor, created by h2xs. It looks like the
 author of the extension was negligent enough to leave the stub
 unedited.
 

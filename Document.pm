@@ -1,4 +1,4 @@
-package RootSeven::Document;
+package Porkchop::Document;
 
 use 5.010000;
 use strict;
@@ -18,7 +18,7 @@ our @ISA = qw(Exporter);
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
-# This allows declaration	use RootSeven::Document ':all';
+# This allows declaration	use Porkchop::Document ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
@@ -64,7 +64,7 @@ sub error
 sub latest_version
 {
     my $document = shift;
-    $document = shift if ($document =~ /&RootSeven\:\:Document/);
+    $document = shift if ($document =~ /&Porkchop\:\:Document/);
 
 	my $response = $ua->request(
 			POST "$session->{protocol}://www.$session->{domain}/_document/api",
@@ -101,7 +101,7 @@ sub upgrade_required
 {
 	$error = '';
 	my $document = shift;
-    $document = shift if ($document =~ /^RootSeven\:\:Document/);
+    $document = shift if ($document =~ /^Porkchop\:\:Document/);
     my $version = shift;
 
     my $latest = latest_version($document);
@@ -129,7 +129,7 @@ sub upgrade_required
 sub content
 {
     my $package_id = shift;
-    $package_id = shift if ($package_id =~ /^RootSeven\:\:Document/);
+    $package_id = shift if ($package_id =~ /^Porkchop\:\:Document/);
 	my $new_file = shift;
 
 	my $response = $ua->request(
@@ -180,16 +180,16 @@ __END__
 
 =head1 NAME
 
-RootSeven::Document - Perl extension for blah blah blah
+Porkchop::Document - Perl extension for blah blah blah
 
 =head1 SYNOPSIS
 
-  use RootSeven::Document;
+  use Porkchop::Document;
   blah blah blah
 
 =head1 DESCRIPTION
 
-Stub documentation for RootSeven::Document, created by h2xs. It looks like the
+Stub documentation for Porkchop::Document, created by h2xs. It looks like the
 author of the extension was negligent enough to leave the stub
 unedited.
 
