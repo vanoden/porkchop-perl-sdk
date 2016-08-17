@@ -126,9 +126,9 @@ sub ping {
 		$self->{error} = "Error pinging service: Cannot parse response: $@\n".$response->content();
 		return $self;
 	}
-	unless ($result->{success} == 1)
+	unless ($response->{success} == 1)
 	{
-		$self->{error} = "Error pinging service: $result->{message}";
+		$self->{error} = "Error pinging service: $response->{message}";
 		return undef;
 	}
 	# Return Package
