@@ -1,16 +1,39 @@
 package Porkchop::Session;
+use base "Porkchop::Portal";
 
 use strict;
 use HTTP::Request;
 use HTTP::Cookies::Netscape;
+use Data::Dumper;
 
 sub new {
 	my $package = shift;
+	my $parameters = shift;
 
 	my $self = { };
 	bless $self,$package;
 
+	if (defined($parameters->{login})) {
+		$self->{login} = $parameters->{login};
+	}
+	if (defined($parameters->{password})) {
+		$self->{password} = $parameters->{password};
+	}
+	if (defined($parameters->{portal_url})) {
+		$self->{poral_url} = $parameters->{portal_url};
+	}
+
 	return $self;
+}
+
+sub portal_url {
+	my $self = shift;
+	my $portal_url = shift;
+
+	if ($portal_url) {
+		$self->{portal_url} = $portal_url;
+	}
+	return $self->{portal_url};
 }
 
 sub login {
@@ -78,9 +101,6 @@ sub error {
 	return $self->{error};
 }
 
-sub init {
-}
-
 sub communicate {
 	my $self = shift;
 	my $request = shift;
@@ -90,48 +110,36 @@ sub communicate {
 		file => "cookies.txt",
 		autosave => 1,
 	);
-	$self->{ua} = LWP::UserAgent->new();
-	$self->{ua}->cookie_jar( $cookie_jar );
+
+	my $conduit = LWP::UserAgent->new();
+	#$self->{ua}->cookie_jar( $cookie_jar );
 
 	# Set User Agent Header
-	$self->{ua}->{agent} = $self->{agent};
+	#$self->{ua}->{agent} = $self->{agent};
 
-	my $url = $self->{protocol}."://".$self->{host}."/".$self->{uri};
+	#my $url = $self->{protocol}."://".$self->{host}."/".$self->{uri};
 
 	# Send Request
-	my $response = $self->{ua}->request($request);
-
-	# Move on if no connection available
-	unless ($response->is_success)
-	{
-		if ($response->content() =~ /Requirements\snot\sMet/)
-		{
-			$self->{error} = "Invalid Username or Password";
-			return $self;
-		}
-		$self->{error} = "Failed to communicate with server: ".$response->status_line;
-		return 0;
-	}
+	#return $self->{ua}->request($request);
 }
 sub ping {
 	my $self = shift;
-	my $url = shift;
 
-	my $request = HTTP::Request->new('POST');
-	my $content = "login=".$self->{login}."&password=".$self->{password}."&method=ping";
-	$request->content($content);
+	my $request = HTTP::Request->new();
+	$request->uri($self->{portal_url}."/_session/ping");
+	$request->header("X-Test" => "mytest");
+	$request->method("POST");
+	my @parameters = (
+		"method=ping"
+	);
+	$request->content(join(",",@parameters));
 
-	my $response = $self->communicate($request);
-	if ($response->code != 200) {
-		$self->{error} = "Error pinging service: Cannot parse response: $@\n".$response->content();
-		return $self;
-	}
-	unless ($response->{success} == 1)
-	{
-		$self->{error} = "Error pinging service: $response->{message}";
-		return undef;
-	}
-	# Return Package
+	my $ua = LWP::UserAgent->new;
+	$ua->agent("PorkchopClient");
+
+	my $response = $ua->request($request);
+print Dumper $response;
+
 	return 1;
 }
 1;
