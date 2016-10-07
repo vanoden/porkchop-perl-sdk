@@ -1,6 +1,6 @@
 ###############################################
 ### Porkchop::Register						###
-### Communicate with Porkchop		###
+### Communicate with Porkchop				###
 ### Register module interface.				###
 ###############################################
 package Porkchop::Register;
@@ -9,176 +9,119 @@ package Porkchop::Register;
 use 5.010000;
 use strict;
 no warnings;
-use Crypt::SSLeay;
-use MIME::Base64;
-use LWP::Simple;
-use LWP::UserAgent;
-use HTTP::Cookies;
-use HTTP::Request::Common;
 use XML::Simple;
+use BostonMetrics::HTTP::Client;
+use BostonMetrics::HTTP::Request;
+use BostonMetrics::HTTP::Response;
 use Data::Dumper;
-
-require Exporter;
-
-our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use Porkchop::Gallery ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	error
-);
 
 our $VERSION = '0.03';
 
-# Preloaded methods go here.
-my $dbh;
-my $verbose;
-my $debug = 0;
-my $session;
-my $last_error = '';
-my $last_error_time = 0;
-
-my $url;
-my $modbus;
-
-# Initiate User Agent
-use HTTP::Cookies::Netscape;
-my $cookie_jar = HTTP::Cookies::Netscape->new(
-   file => "cookies.txt",
-   autosave => 1,
-);
-my $ua = LWP::UserAgent->new();
-$ua->cookie_jar( $cookie_jar );
+my $client;
 
 # Preloaded methods go here.
-sub new
-{
+sub new {
 	my $package = shift;
-    $session = shift;
 
 	my $self = bless({}, $package);
 
-	# Set User Agent Header
-	my $agent = $session->{agent};
-	$session->{agent} = "r7_client_libs/0.1" unless ($agent);
-	$ua->agent($session->{agent});
-
-	if ($session->{portal_url} =~ /^https?\:\/\/\w[\w\-\.]+/)
-	{
-		$url = $session->{portal_url}."/_register/api";
-	}
-	else
-	{
-		unless ($session->{protocol} =~ /^http/)
-		{
-			$self->{error} = "Session protocol must be 'http' or 'https'";
-			return $self;
-		}
-		if ($session->{server})
-		{
-			$url = "$session->{protocol}://$session->{server}/_monitor/api";
-		}
-		elsif ($session->{domain} =~ /^([\w\-\.]+)\.([\w\-]+)$/)
-		{
-			$url = "$session->{protocol}://www.$session->{domain}/_monitor/api";
-		}
-		else
-		{
-			$self->{error} = 'Invalid Session Domain Name';
-			return $self;
-		}
-	}
-
-	# Ping Site To Make Sure We're Ready
-	my $response = $ua->request(
-		POST $url,
-		Content_Type	=> 'form-data',
-		Content			=>
-		[   login           => $session->{user},
-            password        => $session->{pass},
-			method			=> 'ping',
-		]
-    );
-
-	# Move on if no connection available
-	unless ($response->is_success)
-	{
-		if ($response->content() =~ /Requirements\snot\sMet/)
-		{
-			$self->{error} = "Invalid Username or Password";
-			return $self;
-		}
-		$self->{error} = "Failed to communicate with server: ".$response->status_line;
-		print "Portal URL: $url\n";
-		print "Portal Response:\n";
-		print $response->status_line."\n";
-		print $response->content();
-		return $self;
-	}
-
-	my $result = eval{
-        XMLin($response->content(),KeyAttr => [],"ForceArray" => []);
-    };
-	if ($@)
-	{
-		$self->{error} = "Error pinging service: Cannot parse response: $@\n".$response->content();
-		return $self;
-	}
-	unless ($result->{success} == 1)
-	{
-		$self->{error} = "Error pinging service: $result->{message}";
-		return $self;
-	}
 	# Return Package
 	return $self;
 }
-sub ping
-{
+
+sub client {
 	my $self = shift;
-	$self->{error} = "";
-
-	# Ping Site To Make Sure We're Ready
-	my $response = $ua->request(
-		POST $url,
-		Content_Type	=> 'form-data',
-		Content			=>
-		[
-			method			=> 'me',
-		]
-    );
+	my $newclient = shift;
 	
-	# Move on if no connection available
-	unless ($response->is_success)
-	{
-		$self->{error} = "Failed to ping portal: ".$response->status_line();
-		return 0;
-	}
+	$client = $newclient if (defined($newclient));
+	return $client;
+}
 
-	my $xml = eval{
-        XMLin($response->content(),KeyAttr => []);
-    };
-	if ($@)
-	{
-		$self->{error} = "Error pinging portal: Cannot parse response: $@\n".$response->content();
-		return 0;
+sub endpoint {
+	my $self = shift;
+	my $endpoint = shift;
+
+	$self->{endpoint} = $endpoint if (defined($endpoint));
+
+	return $self->{endpoint};
+}
+
+sub ping {
+	my $self = shift;
+	delete $self->{error};
+
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","ping");
+	my $response = $client->load($request);
+	
+	if (! $response) {
+		$self->{error} = "No response from server";
 	}
-	unless ($xml->{success} == 1)
-	{
-		$self->{error} = "Error pinging portal: $xml->{message}";
-		return 0;
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
 	}
-	return $xml;
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server";
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			$self->{error} = "Application error: ".$payload->{error};
+		}
+		print Dumper $payload;
+		return 1;
+	}
+	return undef;
+}
+
+sub authenticate {
+	my ($self,$login,$password) = @_;
+	
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","authenticateSession");
+	$request->add_param("login",$login);
+	$request->add_param("password",$password);
+	my $response = $client->load($request);
+	
+	if (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			$self->{error} = "Application error: ".$payload->{error};
+		}
+		return 1;
+	}
+	return undef;
+}
+sub verbose {
+	my $self = shift;
+	my $verbose = shift;
+	$self->{verbose} = $verbose if (defined($verbose));
+	return $self->{verbose};
+}
+sub error {
+	my $self = shift;
+	return $self->{error};
 }
 1;
 __END__

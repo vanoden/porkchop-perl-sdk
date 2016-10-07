@@ -1,10 +1,11 @@
 package Porkchop::Session;
-use base "Porkchop::Portal";
 
 use strict;
-use HTTP::Request;
-use HTTP::Cookies::Netscape;
+use BostonMetrics::HTTP::Request;
+use BostonMetrics::HTTP::Response;
 use Data::Dumper;
+
+my $client;
 
 sub new {
 	my $package = shift;
@@ -26,14 +27,21 @@ sub new {
 	return $self;
 }
 
-sub portal_url {
+sub client {
 	my $self = shift;
-	my $portal_url = shift;
+	my $newclient = shift;
+	
+	$client = $newclient if (defined($newclient));
+	return $client;
+}
 
-	if ($portal_url) {
-		$self->{portal_url} = $portal_url;
-	}
-	return $self->{portal_url};
+sub endpoint {
+	my $self = shift;
+	my $endpoint = shift;
+
+	$self->{endpoint} = $endpoint if (defined($endpoint));
+
+	return $self->{endpoint};
 }
 
 sub login {
@@ -100,7 +108,12 @@ sub error {
 	my $self = shift;
 	return $self->{error};
 }
-
+sub verbose {
+	my $self = shift;
+	my $verbose = shift;
+	$self->{verbose} = $verbose if (defined($verbose));
+	return $self->{verbose};
+}
 sub communicate {
 	my $self = shift;
 	my $request = shift;
