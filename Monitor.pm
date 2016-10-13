@@ -181,6 +181,7 @@ sub addReading {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
 			$self->{error} = "Application error: ".$payload->{error};
+			return undef;
 		}
 		return 1;
 	}
