@@ -187,6 +187,12 @@ sub addReading {
 	}
 	return undef;
 }
+
+sub error {
+	my $self = shift;
+	return $self->{error};
+}
+
 1;
 __END__
 # Below is stub documentation for your module. You'd better edit it!
