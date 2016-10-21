@@ -107,23 +107,24 @@ sub getHub {
 		if (! $payload->{success}) {
 			$self->{error} = "Application error: ".$payload->{error};
 		}
-		print Dumper $payload;
 		return 1;
 	}
 	return undef;
 }
 sub addMessage {
-	my ($self,$message,$type,$event) = @_;
+	my ($self,$message) = @_;
 	delete $self->{error};
+print Dumper $message;
 
 	my $request = BostonMetrics::HTTP::Request->new();
 	$request->verbose($self->{verbose});
 	$request->method("post");
 	$request->url($self->endpoint);
 	$request->add_param("method","addMessage");
-	$request->add_param("event",$event);
-	$request->add_param("message",$message);
-	$request->add_param("message_type",$type);
+	$request->add_param("asset_code",$message->{asset_code});
+	$request->add_param("message",$message->{message});
+	$request->add_param("level",$message->{level});
+	$request->add_param("date_recorded",$message->{timestamp});
 	my $response = $client->load($request);
 	
 	if (! $response) {
@@ -141,9 +142,13 @@ sub addMessage {
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
-			$self->{error} = "Application error: ".$payload->{error};
+			if ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
 		}
-		print Dumper $payload;
 		return 1;
 	}
 	return undef;
