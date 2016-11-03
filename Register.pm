@@ -80,6 +80,37 @@ sub ping {
 	return undef;
 }
 
+sub me {
+	my $self = shift;
+	
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->url($self->endpoint);
+	$request->add_param("method","me");
+	my $response = $client->post($request);
+	
+	if (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			$self->{error} = "Application error: ".$payload->{error};
+		}
+		return $payload->{customer};
+	}
+	return undef;
+}
+
 sub authenticate {
 	my ($self,$login,$password) = @_;
 	
