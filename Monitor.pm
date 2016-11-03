@@ -74,7 +74,6 @@ sub ping {
 		if (! $payload->{success}) {
 			$self->{error} = "Application error: ".$payload->{error};
 		}
-		print Dumper $payload;
 		return 1;
 	}
 	return undef;
@@ -114,7 +113,6 @@ sub getHub {
 sub addMessage {
 	my ($self,$message) = @_;
 	delete $self->{error};
-print Dumper $message;
 
 	my $request = BostonMetrics::HTTP::Request->new();
 	$request->verbose($self->{verbose});
