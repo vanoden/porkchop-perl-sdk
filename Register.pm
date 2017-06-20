@@ -72,9 +72,17 @@ sub ping {
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
-			$self->{error} = "Application error: ".$payload->{error};
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+			}
+			return 0;
 		}
-		print Dumper $payload;
 		return 1;
 	}
 	return undef;
@@ -104,7 +112,16 @@ sub me {
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
-			$self->{error} = "Application error: ".$payload->{error};
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+			}
+			return undef;
 		}
 		return $payload->{customer};
 	}
@@ -138,7 +155,16 @@ sub authenticate {
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
-			$self->{error} = "Application error: ".$payload->{error};
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+			}
+			return 0;
 		}
 		return 1;
 	}
