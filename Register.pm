@@ -56,8 +56,11 @@ sub ping {
 	$request->url($self->endpoint);
 	$request->add_param("method","ping");
 	my $response = $client->load($request);
-	
-	if (! $response) {
+
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}	
+	elsif (! $response) {
 		$self->{error} = "No response from server";
 	}
 	elsif ($response->code != 200) {
@@ -97,7 +100,10 @@ sub me {
 	$request->add_param("method","me");
 	my $response = $client->post($request);
 	
-	if (! $response) {
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
 		$self->{error} = "No response from server";
 	}
 	elsif ($response->code != 200) {
@@ -140,7 +146,10 @@ sub authenticate {
 	$request->add_param("password",$password);
 	my $response = $client->load($request);
 	
-	if (! $response) {
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
 		$self->{error} = "No response from server";
 	}
 	elsif ($response->code != 200) {
