@@ -139,8 +139,8 @@ sub addMessage {
 	}
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
-		if (! $payload->{success}) {
-			if ($payload->{message}) {
+		if ($payload->{success} != 1) {
+			if ($payload->{message} !~ /^HASH/) {
 				$self->{error} = "Application error: ".$payload->{message};
 			}
 			else {
@@ -182,8 +182,8 @@ sub addReading {
 	}
 	else {
 		my $payload = XMLin($response->body,KeyAttr => []);
-		if (! $payload->{success}) {
-			if ($payload->{message}) {
+		if ($payload->{success} != 1) {
+			if ($payload->{message} !~ /^HASH/) {
 				$self->{error} = "Application error: ".$payload->{message};
 			}
 			else {
