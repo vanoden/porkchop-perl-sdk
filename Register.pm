@@ -83,6 +83,7 @@ sub ping {
 			}
 			else {
 				$self->{error} = "Unhandled service error";
+				print $response->body;
 			}
 			return 0;
 		}
@@ -126,6 +127,7 @@ sub me {
 			}
 			else {
 				$self->{error} = "Unhandled service error";
+				print $response->body;
 			}
 			return undef;
 		}
@@ -172,6 +174,7 @@ sub authenticate {
 			}
 			else {
 				$self->{error} = "Unhandled service error";
+				print $response->body;
 			}
 			return 0;
 		}
@@ -179,6 +182,53 @@ sub authenticate {
 	}
 	return undef;
 }
+
+sub getCustomer {
+	my ($self,$login) = @_;
+	
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","getCustomer");
+	$request->add_param("login",$login);
+	my $response = $client->load($request);
+	
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+				print $response->body;
+			}
+			return undef;
+		}
+		return $payload->{customer};
+	}
+	return undef;
+}
+
 sub verbose {
 	my $self = shift;
 	my $verbose = shift;

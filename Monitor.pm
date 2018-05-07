@@ -78,6 +78,40 @@ sub ping {
 	}
 	return undef;
 }
+sub getAsset {
+	my ($self,$code) = @_;
+	delete $self->{error};
+
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","getAsset");
+	$request->add_param("code",$code);
+	my $response = $client->load($request);
+	
+	if (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server";
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			$self->{error} = "Application error: ".$payload->{error};
+			return undef;
+		}
+		return $payload->{asset};
+	}
+	return undef;
+}
 sub getHub {
 	my ($self,$hub) = @_;
 	delete $self->{error};
@@ -105,8 +139,9 @@ sub getHub {
 		my $payload = XMLin($response->body,KeyAttr => []);
 		if (! $payload->{success}) {
 			$self->{error} = "Application error: ".$payload->{error};
+			return undef;
 		}
-		return 1;
+		return $payload->{asset};
 	}
 	return undef;
 }
