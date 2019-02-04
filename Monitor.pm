@@ -196,8 +196,8 @@ sub addReading {
 	$request->method("post");
 	$request->url($self->endpoint);
 	$request->add_param("method","addReading");
-	$request->add_param("asset_code",$reading->{asset_code});
-	$request->add_param("sensor_code",$reading->{sensor_code});
+	$request->add_param("asset_code",$reading->{sensor}->{asset_code});
+	$request->add_param("sensor_code",$reading->{sensor}->{code});
 	$request->add_param("value",$reading->{value});
 	$request->add_param("date_reading",$reading->{timestamp});
 
