@@ -231,6 +231,13 @@ sub addReading {
 	return undef;
 }
 
+sub verbose {
+	my $self = shift;
+	my $verbose = shift;
+	$self->{verbose} = $verbose if (defined($verbose));
+	return $self->{verbose};
+}
+
 sub error {
 	my $self = shift;
 	return $self->{error};
