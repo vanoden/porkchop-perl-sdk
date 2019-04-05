@@ -229,6 +229,108 @@ sub getCustomer {
 	return undef;
 }
 
+sub addCustomer {
+	my $self = shift;
+	my $parameters = shift;
+
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","addCustomer");
+	$request->add_param("login",$parameters->{login});
+	$request->add_param("password",$parameters->{password});
+	$request->add_param("organization",$parameters->{organization});
+	$request->add_param("first_name",$parameters->{first_name});
+	$request->add_param("last_name",$parameters->{last_name});
+	my $response = $client->load($request);
+
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+				print $response->body;
+			}
+			return undef;
+		}
+		return $payload->{customer};
+	}
+	return undef;
+}
+
+sub updateCustomer {
+	my $self = shift;
+	my $parameters = shift;
+
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","updateCustomer");
+	$request->add_param("code",$parameters->{login});
+	$request->add_param("password",$parameters->{password}) if (defined($parameters->{password}));
+	$request->add_param("organization",$parameters->{organization}) if (defined($parameters->{organization}));
+	$request->add_param("first_name",$parameters->{first_name}) if (defined($parameters->{first_name}));
+	$request->add_param("last_name",$parameters->{last_name}) if (defined($parameters->{last_name}));
+	my $response = $client->load($request);
+
+	if ($client->error) {
+		$self->{error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
+		$self->{error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			if ($payload->{error}) {
+				$self->{error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{error} = "Unhandled service error";
+				print $response->body;
+			}
+			return undef;
+		}
+		return $payload->{customer};
+	}
+	return undef;
+}
+
 sub verbose {
 	my $self = shift;
 	my $verbose = shift;
