@@ -1,9 +1,9 @@
 ###############################################
-### Porkchop::Package						###
+### Porkchop::Storage						###
 ### Communicate with Porkchop				###
-### Package module interface.				###
+### Storage module interface.				###
 ###############################################
-package Porkchop::Package;
+package Porkchop::Storage;
 
 # Load Modules
 use 5.010000;
@@ -57,6 +57,7 @@ sub endpoint {
 
 	return $self->{endpoint};
 }
+
 sub ping {
 	my $self = shift;
 	delete $self->{error};
@@ -70,7 +71,7 @@ sub ping {
 	return $self->_send($request);
 }
 
-sub find_packages {
+sub find_repositories {
 	my $self = shift;
 
 	$debug->println("called");
@@ -78,50 +79,69 @@ sub find_packages {
 	$request->verbose($self->verbose());
 	$request->method("post");
 	$request->url($self->endpoint());
-	$request->add_param("method","findPackages");
+	$request->add_param("method","findRepositories");
 
-	my @results;
-	my $payload = $self->_send($request,'package');
-	if (ref($payload) eq "ARRAY") {
-		return @{$payload};
-	}
-	elsif ($payload) {
-		$results[0] = $payload;
-	}
-	return @results;
+	return @{$self->_send($request,'repository')};
 }
 
-sub add_version {
-	my ($self,$package_code,$major,$minor,$build,$status,$file) = @_;
+sub add_repository {
+	my ($self,$param) = @_;
 
-	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
-	$request->method("post");
-	$request->url($self->endpoint());
-	$request->add_param("method","addVersion");
-	$request->add_param("package_code",$package_code);
-	$request->add_param("major",$major);
-	$request->add_param("minor",$minor);
-	$request->add_param("build",$build);
-	$request->add_param("status",$status);
-	$request->add_file($file);
-
-	return $self->_send($request);
-}
-
-sub latest_version {
-	my $self = shift;
-	my $package_code = shift;
-
-	$debug->println("called for package_code $package_code");
+	$debug->println("called");
 	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->verbose($self->verbose());
 	$request->method("post");
 	$request->url($self->endpoint());
-	$request->add_param("method","latestVersion");
-	$request->add_param("package_code",$package_code);
+	$request->add_param("method","addRepository");
+	$request->add_param("code",$param->{code});
+	$request->add_param("type",$param->{type});
+	$request->add_param("name",$param->{name});
+	$request->add_param("status",$param->{status});
+	$request->add_param("path",$param->{path});
 
-	my $version = $self->_send($request,'version');
-	return $version;
+	return $self->_send($request);
+}
+
+
+sub add_file {
+	my ($self,$repository_code,$name,$path,$status,$file,$mime_type) = @_;
+
+	unless (defined($mime_type) && length($mime_type) > 0) {
+		$file =~ /\.([\w\-\_]+)$/;
+		my $extension = $1;
+		if ($extension =~ /^(log|txt)$/) {
+			$mime_type = 'text/plain';
+		}
+		elsif ($extension eq 'tar') {
+			$mime_type = 'application/tar';
+		}
+		elsif ($extension =~ /^(tar\.gz|tgz)$/) {
+			$mime_type = 'application/tar+gzip';
+		}
+		elsif ($extension =~ /^gz$/) {
+			$mime_type = 'application/gzip';
+		}
+		else {
+			$self->{_error} = "Cannot guess mime type for '$extension'";
+			return 0;
+		}
+	}
+
+	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
+	$request->method("post");
+	$request->url($self->endpoint());
+	$request->add_param("method","addFile");
+	$request->add_param("repository_code",$repository_code);
+	$request->add_param("name",$name);
+	$request->add_param("path",$path);
+	$request->add_param("mime_type",$mime_type);
+	$request->add_param("status",$status);
+	$request->add_file($file);
+	if ($request->error()) {
+		$self->{_error} = "Error adding file: ".$request->error();
+		return 0;
+	}
+	return $self->_send($request);
 }
 
 sub _send {
