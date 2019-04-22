@@ -92,7 +92,7 @@ sub find_packages {
 }
 
 sub add_version {
-	my ($self,$package_code,$major,$minor,$build,$status,$file) = @_;
+	my ($self,$package_code,$major,$minor,$build,$status,$file,$mime_type) = @_;
 
 	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->method("post");
@@ -103,7 +103,11 @@ sub add_version {
 	$request->add_param("minor",$minor);
 	$request->add_param("build",$build);
 	$request->add_param("status",$status);
-	$request->add_file($file);
+	$request->add_file($file,{'mime_type' => $mime_type});
+	if ($request->error) {
+		$self->{_error} = $request->error();
+		return 0;
+	}
 
 	return $self->_send($request);
 }
