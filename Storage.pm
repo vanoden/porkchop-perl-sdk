@@ -106,6 +106,11 @@ sub add_repository {
 sub add_file {
 	my ($self,$repository_code,$name,$path,$status,$file,$mime_type) = @_;
 
+    unless ($repository_code) {
+        $self->{_error} = "Repository code required";
+        return 0;
+    }
+
 	unless (defined($mime_type) && length($mime_type) > 0) {
 		$file =~ /\.([\w\-\_]+)$/;
 		my $extension = $1;
