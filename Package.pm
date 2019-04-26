@@ -128,6 +128,23 @@ sub latest_version {
 	return $version;
 }
 
+sub download_version {
+	my ($self,$package_code,$major_number,$minor_number,$build_number,$target) = @_;
+
+	$debug->println("Downloading version ".sprintf("%0d.%0d.%03d\n",$major_number,$minor_number,$build_number));
+	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
+	$request->verbose($self->verbose());
+	$request->method("post");
+	$request->url($self->endpoint());
+	$request->add_param("method","downloadVersion");
+	$request->add_param("package_code",$package_code);
+	$request->add_param("major",$major_number);
+	$request->add_param("minor",$minor_number);
+	$request->add_param("build",sprintf("%03d",$build_number));
+
+	return $self->_send($request);
+}
+
 sub _send {
 	my ($self,$request,$object_name) = @_;
 
@@ -143,6 +160,19 @@ sub _send {
 	}
 	elsif ($response->error) {
 		$self->{_error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() =~ /application\/tar/) {
+		my $tmp_file = "/tmp/package.$$";
+		print "Downloading ".$response->content_type()." ".$response->content_length()." bytes\n";
+		unless (open (TMP,"> $tmp_file")) {
+			$self->{_error} = "Could not create tmp file $tmp_file: $!";
+			return 0;
+		}
+		binmode(TMP);
+		print TMP $response->body();
+		close TMP;
+		print "Downloaded File $tmp_file\n";
+		return 1;
 	}
 	elsif ($response->content_type() ne "application/xml") {
 		$self->{_error} = "Non object from server: ".$response->content_type();
