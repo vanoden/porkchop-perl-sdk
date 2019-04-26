@@ -13,17 +13,23 @@ use XML::Simple;
 use BostonMetrics::HTTP::Client;
 use BostonMetrics::HTTP::Request;
 use BostonMetrics::HTTP::Response;
+use Embedded::Debug;
 use Data::Dumper;
 
 our $VERSION = '0.03';
 
 my $client;
+my $debug = Embedded::Debug->new();
 
 # Preloaded methods go here.
 sub new {
 	my $package = shift;
+	my $options = shift;
 
 	my $self = bless({}, $package);
+	if ($options->{verbose}) {
+		$self->verbose($options->{verbose});
+	}
 
 	# Return Package
 	return $self;
@@ -54,6 +60,10 @@ sub ping {
 	$request->verbose($self->{verbose});
 	$request->method("post");
 	$request->url($self->endpoint);
+	if ($request->error()) {
+		$self->{error} = $request->error;
+		return 0;
+	}
 	$request->add_param("method","ping");
 	my $response = $client->load($request);
 
@@ -85,6 +95,7 @@ sub ping {
 				$self->{error} = "Unhandled service error";
 				print $response->body;
 			}
+			$debug->log($self->{error},'error');
 			return 0;
 		}
 		return 1;
@@ -334,7 +345,10 @@ sub updateCustomer {
 sub verbose {
 	my $self = shift;
 	my $verbose = shift;
-	$self->{verbose} = $verbose if (defined($verbose));
+	if (defined($verbose)) {
+		$debug->level($verbose);
+		$self->{verbose} = $verbose;
+	}
 	return $self->{verbose};
 }
 sub error {
