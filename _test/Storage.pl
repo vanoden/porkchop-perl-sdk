@@ -17,33 +17,65 @@ use Porkchop::Storage;
 ### User Configurable Parameters			###
 ###############################################
 my %config = (
-	'conduit'	=> 'TCP',
-	'log_level'	=> 3,
-	'timeout'	=> 10,
-	'portal_url'	=> "http://test.spectrosinstruments.com"
+	'conduit'		=> 'TCP',
+	'log_level'		=> 3,
+	'timeout'		=> 10,
+	'environment'	=> "development"
 );
 
 foreach my $option(@ARGV) {
 	chomp $option;
 
-	if ($option =~ /^\-\-(upload\-file|upload\-name|log\-level)\=(.*)/) {
+	if ($option =~ /^\-\-(upload\-file|upload\-name|log\-level|environment|repository|login)\=(.*)/) {
 		my $key = $1;
 		my $value = $2;
 		$key =~ s/\-/_/g;
 		$config{$key} = $value;
 	}
+    elsif ($option =~ /^\-\-(settings)$/) {
+        my $key = $1;
+        $key =~ s/\-/_/g;
+        $config{$key} = 1;
+    }
+}
+
+if ($config{environment} eq 'development') {
+	$config{portal_url} = 'http://dev.office.spectrosinstruments.com';
+}
+elsif ($config{environment} eq 'test') {
+	$config{portal_url} = 'http://test.spectrosinstruments.com';
+}
+elsif ($config{environment} eq 'production') {
+	$config{portal_url} = 'https://www.spectrosinstruments.com';
+}
+else {
+	die "Valid environment required\n";
+}
+
+if ($config{settings}) {
+    foreach my $setting(sort keys %config) {
+        print "$setting: ".$config{$setting}."\n";
+    }
+    exit;
 }
 
 ###############################################
 ### Get Portal Credentials					###
 ###############################################
-print "Please Provide Your Portal Credentials\n";
-print "Login: ";
-my $login = ReadLine(0);
-chomp $login;
-print "Password: ";
+my ($login,$password);
+if (defined($config{login})) {
+    $login = $config{login};
+    print "Please Provide Your Portal Password\n";
+}
+else {
+    print "Please Provide Your Portal Credentials\n";
+    print "Login: ";
+    $login = ReadLine(0);
+    chomp $login;
+    print "Password: ";
+}
 ReadMode('noecho');
-my $password = ReadLine(0);
+$password = ReadLine(0);
 ReadMode('normal');
 chomp $password;
 print "\n";
@@ -95,9 +127,13 @@ foreach my $repository(@repositories) {
 	print "Repo: ".$repository->{code}."\n";
 }
 
-if ($storage->add_file('repo1',$config{upload_name},'files','ACTIVE',$config{upload_file})) {
-	print "Success\n";
-}
-else {
-	print "Error: ".$storage->error()."\n";
+if ($config{upload_name}) {
+	die "File not found\n" unless (-e $config{upload_file});
+    die "Repository required\n" unless (defined($config{repository}));
+	if ($storage->add_file($config{repository},$config{upload_name},'files','ACTIVE',$config{upload_file})) {
+		print "Success\n";
+	}
+	else {
+		print "Error: ".$storage->error()."\n";
+	}
 }

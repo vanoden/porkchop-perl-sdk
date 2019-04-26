@@ -17,16 +17,16 @@ use Porkchop::Package;
 ### User Configurable Parameters			###
 ###############################################
 my %config = (
-	'conduit'	=> 'TCP',
-	'log_level'	=> 9,
-	'timeout'	=> 10,
-	'portal_url'	=> "http://test.spectrosinstruments.com"
+	'conduit'	    => 'TCP',
+	'log_level'	    => 9,
+	'timeout'	    => 10,
+	'environment'	=> "development"
 );
 
 foreach my $option(@ARGV) {
 	chomp $option;
 
-	if ($option =~ /^\-\-(upload\-file|log\-level|product\-code|major\-number|minor\-number|build\-number)\=(.*)/) {
+	if ($option =~ /^\-\-(upload\-file|log\-level|product\-code|major\-number|minor\-number|build\-number|environment|login)\=(.*)/) {
 		my $key = $1;
 		my $value = $2;
 		$key =~ s/\-/_/g;
@@ -37,6 +37,19 @@ foreach my $option(@ARGV) {
         $key =~ s/\-/_/g;
         $config{$key} = 1;
     }
+}
+
+if ($config{environment} eq 'development') {
+	$config{portal_url} = 'http://dev.office.spectrosinstruments.com';
+}
+elsif ($config{environment} eq 'test') {
+	$config{portal_url} = 'http://test.spectrosinstruments.com';
+}
+elsif ($config{environment} eq 'production') {
+	$config{portal_url} = 'https://www.spectrosinstruments.com';
+}
+else {
+	die "Valid environment required\n";
 }
 
 if ($config{settings}) {
@@ -106,7 +119,6 @@ foreach my $package(@packages) {
 		$build_number = $version->{build};
 		$major_number = $version->{major};
 		$minor_number = $version->{minor};
-        exit;
 	}
     $build_number ++;
 }
@@ -121,7 +133,7 @@ if (defined($config{major_number})) {
 	$major_number = $config{major_number};
 }
 
-print "Major: $major_number\n";
+print "Creating version: $major_number.$minor_number.$build_number\n";
 if ($config{product_code} && length($config{product_code})) {
 	die "major number required\n" unless(defined($major_number));
 	if ($_package->add_version($config{product_code},$major_number,$minor_number,$build_number,'PUBLISHED',$config{upload_file})) {
