@@ -171,7 +171,7 @@ sub _send {
 		binmode(TMP);
 		print TMP $response->body();
 		close TMP;
-		print "Downloaded File $tmp_file\n";
+		$self->{download} = $tmp_file;
 		return 1;
 	}
 	elsif ($response->content_type() ne "application/xml") {
