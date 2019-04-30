@@ -363,16 +363,21 @@ sub error {
 }
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
-Porkchop::Register - Perl extension for blah blah blah
+Porkchop::Register - Perl wrapper for Porkchop Register API
 
 =head1 SYNOPSIS
 
   use Porkchop::Register;
-  blah blah blah
+  $register = Porkchop::Register->new({'verbose' => 9,'endpoint' => 'http://testurl.com/_register/api'});
+  if ($register->authenticate('login','password')) {
+    $customer = $register->me();
+  }
+  else {
+    die $register->error."\n";
+  } 
 
 =head1 DESCRIPTION
 

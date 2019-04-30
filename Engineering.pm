@@ -123,14 +123,8 @@ Porkchop::Register - Perl wrapper for Porkchop Register API
 
 =head1 SYNOPSIS
 
-  use Porkchop::Register;
-  $register = Porkchop::Register->new({'verbose' => 9,'endpoint' => 'http://testurl.com/_register/api'});
-  if ($register->authenticate('login','password')) {
-	$customer = $register->me();
-  }
-  else {
-    die $register->error."\n";
-  } 
+  use Porkchop::Engineering;
+  $engineering = Porkchop::Engineering->new({'verbose' => 9,'endpoint' => 'http://testurl.com/_engineering/api'});
 
 =head1 DESCRIPTION
 
