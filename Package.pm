@@ -219,7 +219,6 @@ sub error {
 }
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
@@ -228,7 +227,8 @@ Porkchop::Package - Perl extension for interfacing with the Porkchop CMS Package
 =head1 SYNOPSIS
 
   use Porkchop::Package;
-  my $package = Porkchop::Package->new
+  my $package = Porkchop::Package->new({'verbose' => 9});
+  my $version = $package->latest_version('web-dl');
 
 =head1 DESCRIPTION
 
