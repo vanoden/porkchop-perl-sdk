@@ -30,6 +30,12 @@ sub new {
 	if ($options->{verbose}) {
 		$self->verbose($options->{verbose});
 	}
+	if (defined($options->{endpoint})) {
+		$self->endpoint($options->{endpoint});
+	}
+	if (defined($options->{client})) {
+		$self->client($options->{client});
+	}
 
 	# Return Package
 	return $self;
