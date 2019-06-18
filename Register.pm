@@ -199,7 +199,28 @@ sub authenticate {
 	}
 	return undef;
 }
+sub getOrganization {
+	my ($self,$code) = @_;
+	
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","getOrganization");
+	$request->add_param("code",$code);
+	return $self->_send($request,'organization');
+}
+sub searchOrganizations {
+	my ($self,$string) = @_;
 
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->{verbose});
+	$request->method("post");
+	$request->url($self->endpoint);
+	$request->add_param("method","searchOrganizations");
+	$request->add_param("string",$string);
+	return $self->_send($request,'organization');
+}
 sub getCustomer {
 	my ($self,$login) = @_;
 	
@@ -348,6 +369,49 @@ sub updateCustomer {
 	return undef;
 }
 
+sub _send {
+	my ($self,$request,$object_name) = @_;
+
+	my $response = $client->load($request);
+	if ($client->error) {
+		$self->{_error} = "Client error: ".$client->error;
+	}
+	elsif (! $response) {
+		$self->{_error} = "No response from server";
+	}
+	elsif ($response->code != 200) {
+		$self->{_error} = "Server error [".$response->code."] ".$response->reason;
+	}
+	elsif ($response->error) {
+		$self->{_error} = "Server error: ".$response->error;
+	}
+	elsif ($response->content_type() ne "application/xml") {
+		$self->{_error} = "Non object from server: ".$response->content_type();
+	}
+	else {
+		my $payload = XMLin($response->body,KeyAttr => []);
+		if (! $payload->{success}) {
+			if ($payload->{error}) {
+				$self->{_error} = "Application error: ".$payload->{error};
+			}
+			elsif ($payload->{message}) {
+				$self->{_error} = "Application error: ".$payload->{message};
+			}
+			else {
+				$self->{_error} = "Unhandled service error";
+				print $response->body;
+			}
+			return undef;
+		}
+		if (defined($object_name)) {
+			return $payload->{$object_name};
+		}
+		else {
+			return 1;
+		}
+	}
+	return undef;
+}
 sub verbose {
 	my $self = shift;
 	my $verbose = shift;

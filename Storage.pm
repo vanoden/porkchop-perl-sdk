@@ -25,7 +25,9 @@ my $debug = Embedded::Debug->new();
 sub new {
 	my $package = shift;
 	my $options = shift;
-	my $self = bless({}, $package);
+
+	my $self = { };
+	bless $self, $package;
 
 	if (defined($options->{verbose})) {
 		$self->verbose($options->{verbose});
