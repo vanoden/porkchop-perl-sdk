@@ -163,7 +163,7 @@ sub _send {
 	}
 	elsif ($response->content_type() =~ /application\/tar/) {
 		my $tmp_file = "/tmp/package.$$";
-		print "Downloading ".$response->content_type()." ".$response->content_length()." bytes\n";
+		$debug->println("Downloading ".$response->content_type()." ".$response->content_length()." bytes");
 		unless (open (TMP,"> $tmp_file")) {
 			$self->{_error} = "Could not create tmp file $tmp_file: $!";
 			return 0;
