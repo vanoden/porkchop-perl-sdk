@@ -148,14 +148,18 @@ sub download_version {
 sub _send {
 	my ($self,$request,$object_name) = @_;
 
+	$debug->println("Sending request ".$request->url());
 	my $response = $client->load($request);
 	if ($client->error) {
+		$debug->println("Server returned ".$client->error,'error');
 		$self->{_error} = "Client error: ".$client->error;
 	}
 	elsif (! $response) {
+		$debug->println("Server returned no response",'error');
 		$self->{_error} = "No response from server";
 	}
 	elsif ($response->code != 200) {
+		$debug->println("Server returned code ".$response->code,'error');
 		$self->{_error} = "Server error [".$response->code."] ".$response->reason;
 	}
 	elsif ($response->error) {
