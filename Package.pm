@@ -142,11 +142,11 @@ sub download_version {
 	$request->add_param("minor",$minor_number);
 	$request->add_param("build",sprintf("%03d",$build_number));
 
-	return $self->_send($request);
+	return $self->_send($request,$target);
 }
 
 sub _send {
-	my ($self,$request,$object_name) = @_;
+	my ($self,$request,$option) = @_;
 
 	$debug->println("Sending request ".$request->url());
 	my $response = $client->load($request);
@@ -167,6 +167,7 @@ sub _send {
 	}
 	elsif ($response->content_type() =~ /application\/tar/) {
 		my $tmp_file = "/tmp/package.$$";
+		$tmp_file = $option if (defined($option));
 		$debug->println("Downloading ".$response->content_type()." ".$response->content_length()." bytes");
 		unless (open (TMP,"> $tmp_file")) {
 			$self->{_error} = "Could not create tmp file $tmp_file: $!";
@@ -196,8 +197,8 @@ sub _send {
 			}
 			return undef;
 		}
-		if (defined($object_name)) {
-			return $payload->{$object_name};
+		if (defined($option)) {
+			return $payload->{$option};
 		}
 		else {
 			return 1;
