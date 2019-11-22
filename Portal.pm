@@ -47,6 +47,15 @@ sub url {
 sub startSession {
 	my $self = shift;
 	$self->{error} = undef;
+	my $login = shift;
+	my $password = shift;
+
+	if (defined($login)) {
+		$self->{login} = $login;
+	}
+	if (defined($password)) {
+		$self->{password} = $password;
+	}
 
 	my $response = $self->requestSuccess(
 		"/_register/api",
