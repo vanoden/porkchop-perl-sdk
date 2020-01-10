@@ -45,7 +45,7 @@ sub api {
 
 	require $location;
 	my @parameters = @_;
-	push(@parameters,{'host' => $self->{host},'protocol' => $self->{protocol},'client' => $client});
+	push(@parameters,{'host' => $self->{host},'protocol' => $self->{protocol},'client' => $client,'verbose' => $self->{verbose}});
 	my $object = $class->new(@parameters);
 	return $object;
 }
@@ -61,7 +61,8 @@ sub _connected {
 }
 sub authenticate {
 	my ($self,$login,$password) = @_;
-
+	$self->uri('/_register/api');
+	return $self->_requestSuccess({'method' => 'authenticateSession', 'login' => $login, 'password' => $password});
 }
 
 sub _send {
