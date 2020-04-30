@@ -151,7 +151,6 @@ sub ping {
 	$ua->agent("PorkchopClient");
 
 	my $response = $ua->request($request);
-print Dumper $response;
 
 	return 1;
 }

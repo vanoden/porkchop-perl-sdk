@@ -10,7 +10,6 @@ use strict;
 use BostonMetrics::HTTP::Client;
 use BostonMetrics::HTTP::Request;
 use Embedded::Debug;
-use Data::Dumper;
 use XML::Simple;
 use vars '$AUTOLOAD';
 
@@ -81,7 +80,7 @@ sub account {
 	$debug->println("Calling shared account from register api");
 	my $remember_uri = $self->uri();
 	$self->uri('/_register/api');
-	my $result = $self->_requestSuccess({'method' => 'me'});
+	my $result = $self->_requestObject({'method' => 'me'},'customer');
 	$self->uri($remember_uri);
 	return $result;
 }
@@ -99,7 +98,7 @@ sub _send {
 	delete $self->{_error};
 
 	$debug->println("Sending request to ".$self->endpoint());
-$debug->println("\n".$request->serialize(),'trace');
+
 	my $response = $client->post($request);
 	if ($client->error) {
 		$self->{_error} = "Client error: ".$client->error;
@@ -247,7 +246,6 @@ sub _requestArray {
 			}
 		}
 		else {
-			print Dumper $envelope;
 			$elements[0] = $envelope->{$element_name};
 		}
 		return @elements;
@@ -342,7 +340,6 @@ sub verbose {
 	my $self = shift;
 	my $verbose = shift;
 	if (defined($verbose)) {
-		$debug->println("Verbose: ".$verbose,'notice');
 		$debug->level($verbose);
 	}
 	return $debug->level();
