@@ -19,7 +19,7 @@ use Data::Dumper;
 our $VERSION = '0.03';
 
 my $client;
-my $debug = Embedded::Debug->new();
+my $debug;
 
 # Preloaded methods go here.
 sub new {
@@ -27,6 +27,8 @@ sub new {
 	my $options = shift;
 
 	my $self = bless({}, $package);
+
+	$debug = Embedded::Debug->new();
 	if ($options->{verbose}) {
 		$self->verbose($options->{verbose});
 	}
@@ -372,6 +374,9 @@ sub updateCustomer {
 sub _send {
 	my ($self,$request,$object_name) = @_;
 
+	$debug->println($debug->level(),'error');
+	$debug->println("Sending request ".$request->url());
+	$debug->println($request->serialize(),'trace2');
 	my $response = $client->load($request);
 	if ($client->error) {
 		$self->{_error} = "Client error: ".$client->error;
@@ -417,9 +422,8 @@ sub verbose {
 	my $verbose = shift;
 	if (defined($verbose)) {
 		$debug->level($verbose);
-		$self->{verbose} = $verbose;
 	}
-	return $self->{verbose};
+	return $debug->level();
 }
 sub error {
 	my $self = shift;

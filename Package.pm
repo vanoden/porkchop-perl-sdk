@@ -149,6 +149,7 @@ sub _send {
 	my ($self,$request,$option) = @_;
 
 	$debug->println("Sending request ".$request->url());
+	$debug->println($request->serialize(),'trace2');
 	my $response = $client->load($request);
 	if ($client->error) {
 		$debug->println("Server returned ".$client->error,'error');
