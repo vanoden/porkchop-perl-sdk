@@ -272,7 +272,7 @@ sub endpoint {
 
 	if (defined($endpoint)) {
 		$debug->println("Updating endpoint with $endpoint",'trace');
-		if ($endpoint =~ /(https?)\:\/\/([^\/]+)(\/.*)/) {
+		if ($endpoint =~ /(https?)\:\/\/([^\/]+)(\/.*)/ || $endpoint =~ /(https?)\:\/\/([^\/]+)/) {
 			my $protocol = $1;
 			my $host = $2;
 			my $uri = $3;
