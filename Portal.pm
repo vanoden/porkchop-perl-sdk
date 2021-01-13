@@ -80,7 +80,7 @@ sub ping {
 		}
 	);
 	if ($response && $response->{success}) {
-		print Dumper $response;
+		#print Dumper $response;
 		return 1;
 	}
 	return 0;
