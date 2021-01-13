@@ -76,6 +76,7 @@ sub ping {
 sub getCountry {
 	my $self = shift;
 	my $name = shift;
+	$self->{_error} = undef;
 
 	my $params = {
 		'method'	=> 'getCountry',
@@ -122,6 +123,7 @@ sub addCountry {
 
 sub getProvince {
 	my ($self,$name,$country_id) = @_;
+	$self->{_error} = undef;
 	my $params = {
 		'method'		=> 'getProvince',
 		'country_id'	=> $country_id,
@@ -144,6 +146,7 @@ sub getProvince {
 
 sub addProvince {
 	my ($self,$name,$country_id,$abbreviation) = @_;
+	$self->{_error} = undef;
 
 	my $params = {
 		'method'		=> 'addProvince',
