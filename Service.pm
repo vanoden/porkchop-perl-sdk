@@ -116,7 +116,16 @@ sub _send {
 		$self->{_error} = "Non object from server: ".$response->content_type();
 	}
 	else {
-		my $payload = XMLin($response->body,KeyAttr => [],ForceArray => $array);
+		my $payload;
+		eval {
+			$payload = XMLin($response->body,KeyAttr => [],ForceArray => $array);
+		};
+		if ($@) {
+			$self->{_error} = "Unparseable response: $@";
+			$debug->println("Unparseable response: $@",'error');
+			$debug->println($response->body(),'debug');
+			return undef;
+		}
 		if (! $payload->{success}) {
 			if ($payload->{error}) {
 				$self->{_error} = "Application error: ".$payload->{error};
