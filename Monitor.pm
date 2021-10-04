@@ -135,7 +135,14 @@ sub getAsset {
 		$self->{error} = "Non object from server";
 	}
 	else {
-		my $payload = XMLin($response->body,KeyAttr => []);
+		my $payload;
+		eval {
+			$payload = XMLin($response->body,KeyAttr => []);
+		};
+		if ($@) {
+			$self->{error} = "Unparseable response: $@";
+			return undef;
+		}
 		if (! $payload->{success}) {
 			$self->{error} = "Application error: ".$payload->{error};
 			return undef;
