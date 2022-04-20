@@ -20,13 +20,18 @@ my %config = (
 	'conduit'		=> 'TCP',
 	'log_level'		=> 3,
 	'timeout'		=> 10,
-	'environment'	=> "development"
+	'environment'	=> "development",
+	'repository'	=> '',
+	'name'			=> 'Test Repo 1',
+	'path'			=> '/var/porkchop/storage/repo1',
+	'status'		=> 'ACTIVE',
+	'type'			=> 'Local'
 );
 
 foreach my $option(@ARGV) {
 	chomp $option;
 
-	if ($option =~ /^\-\-(upload\-file|upload\-name|log\-level|environment|repository|login)\=(.*)/) {
+	if ($option =~ /^\-\-(upload\-file|upload\-name|log\-level|environment|repository|login|create\-repository|path|name)\=(.*)/) {
 		my $key = $1;
 		my $value = $2;
 		$key =~ s/\-/_/g;
@@ -50,6 +55,10 @@ elsif ($config{environment} eq 'production') {
 }
 else {
 	die "Valid environment required\n";
+}
+
+if (defined($config{create_repository})) {
+	$config{repository} = $config{create_repository} if ($config{create_repository} ne "1");
 }
 
 if ($config{settings}) {
@@ -112,13 +121,13 @@ unless ($storage->ping()) {
 	die "Error pinging endpoint: ".$storage->error()."\n";
 }
 
-if (0) {
+if (defined($config{'create_repository'})) {
 	$storage->add_repository({
-		'code'		=> 'repo1',
-		'name'		=> 'Test Repository',
-		'type'		=> 'Local',
-		'status'	=> 'ACTIVE',
-		'path'		=> "/var/porkchop/storage/repo1"
+		'code'		=> $config{'repository'},
+		'name'		=> $config{'name'},
+		'type'		=> $config{'type'},
+		'status'	=> $config{'status'},
+		'path'		=> $config{'path'}
 	});
 	die $storage->error()."\n" if ($storage->error());
 }
