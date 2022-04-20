@@ -184,7 +184,14 @@ sub _send {
 		$self->{_error} = "Non object from server: ".$response->content_type();
 	}
 	else {
-		my $payload = XMLin($response->body,KeyAttr => []);
+		my $payload;
+		eval {
+			$payload = XMLin($response->body,KeyAttr => []);
+		};
+		if ($@) {
+			$self->{_error} = "Application error: failed to parse response: ".$@."\n".$response->body;
+			return 0;
+		}
 		if (! $payload->{success}) {
 			if ($payload->{error}) {
 				$self->{_error} = "Application error: ".$payload->{error};
