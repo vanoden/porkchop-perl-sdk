@@ -1,4 +1,4 @@
-package Porkchop::Service::Alert;
+package Porkchop::Service::Package;
 
 # Load Modules
 use strict;
@@ -11,10 +11,10 @@ sub new {
 	my $package = shift;
 	my $options = shift;
 
-	$options->{uri} = '/_alert/api';
+	$options->{uri} = '/_package/api';
 	my $self = $package->SUPER::new($options);
 
-	$self->{service} = 'Alert';
+	$self->{service} = 'Package';
 	return $self;
 }
 
