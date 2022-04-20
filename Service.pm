@@ -112,6 +112,20 @@ sub _send {
 	elsif ($response->error) {
 		$self->{_error} = "Server error: ".$response->error;
 	}
+	elsif ($response->{headers}->{'Content-Disposition'} =~ /^filename\=(.*)/) {
+		my $payload;
+		$self->{filename} = $1;
+		$self->{tmpfile} = "/tmp/porkchopServiceDownload.".$$;
+		$self->{filesize} = length($response->body());
+		open(OUT,">".$self->{tmpfile});
+		if ($! && $! !~ /Inappropriate\sioctl/) {
+			$self->{_error} = "Server error: Cannot save download: $!";
+		}
+		else {
+			print OUT $response->body();
+			return 1;
+		}
+	}
 	elsif ($response->content_type() ne "application/xml") {
 		$self->{_error} = "Non object from server: ".$response->content_type();
 	}
@@ -265,6 +279,31 @@ sub _requestArray {
 	}
 }
 
+sub _requestFile {
+	my ($self,$params,$path) = @_;
+	delete $self->{_error};
+
+	my $request = BostonMetrics::HTTP::Request->new();
+	$request->verbose($self->verbose());
+	$request->url($self->endpoint);
+
+	foreach my $key (sort keys %{$params}) {
+		$debug->println("Adding param $key => ".$params->{$key});
+		$request->add_param($key,$params->{$key});
+	}
+
+	if ($self->_send($request)) {
+		return {
+			'tmpfile'	=> $self->{tmpfile},
+			'filename'	=> $self->{filename},
+			'filesize'	=> $self->{filesize}
+		};
+	}
+	else {
+		return undef;
+	}
+}
+
 sub client {
 	my $self = shift;
 	my $newclient = shift;
@@ -379,6 +418,9 @@ sub AUTOLOAD {
 
 	$params->{'method'} = $method;
 
+	if ($self->{service} eq 'Package' && $method =~ /^download/) {
+		return $self->_requestFile($params,$res_object);
+	}
 	if (defined($res_object)) {
 		my $object = $self->_requestObject($params,$res_object);
 		return $object;
