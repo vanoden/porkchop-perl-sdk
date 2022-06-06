@@ -416,6 +416,9 @@ sub AUTOLOAD {
 	}
 	$debug->println("Calling $method from ".$self->{service});
 
+	if (! ref($params)) {
+		$params = {};
+	}
 	$params->{'method'} = $method;
 
 	if ($self->{service} eq 'Package' && $method =~ /^download/) {
