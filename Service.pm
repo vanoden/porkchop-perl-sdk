@@ -13,27 +13,25 @@ use Embedded::Debug;
 use XML::Simple;
 use vars '$AUTOLOAD';
 
-my $client = BostonMetrics::HTTP::Client->new();
-my $debug;
-
 sub new {
 	my $package = shift;
 	my $options = shift;
 
 	my $self = bless({}, $package);
 
-	$debug = Embedded::Debug->new();
+	$self->{_client} = BostonMetrics::HTTP::Client->new();
+	$self->{_debug} = Embedded::Debug->new();
 
 	$self->protocol('https');
 	$self->host('127.0.0.1');
 	$self->port(443);
 
-    my @available_options = qw (verbose protocol host uri endpoint client);
-    foreach my $option(@available_options) {
-        if (defined($options->{$option})) {
-            $self->$option($options->{$option});
-        }
-    }
+	my @available_options = qw (verbose protocol host uri endpoint);
+	foreach my $option(@available_options) {
+		if (defined($options->{$option})) {
+			$self->$option($options->{$option});
+		}
+	}
 
 	# Return Package
 	return $self;
@@ -47,7 +45,7 @@ sub api {
 
 	require $location;
 	my @parameters = @_;
-	push(@parameters,{'host' => $self->{host},'protocol' => $self->{protocol},'client' => $client,'verbose' => $self->verbose()});
+	push(@parameters,{'host' => $self->{host},'protocol' => $self->{protocol},'client' => $self->{_client},'verbose' => $self->verbose()});
 	my $object = $class->new(@parameters);
 	return $object;
 }
@@ -65,9 +63,9 @@ sub authenticate {
 	my ($self,$login,$password) = @_;
 	delete $self->{_error};
 
-	$debug->println("Calling shared authenticate from register api");
+	$self->{_debug}->println("Calling shared authenticate from register api");
 	my $remember_uri = $self->uri();
-	$debug->println("URI WAS ".$remember_uri);
+	$self->{_debug}->println("URI WAS ".$remember_uri);
 	$self->uri('/_register/api');
 	my $result = $self->_requestSuccess({'method' => 'authenticateSession', 'login' => $login, 'password' => $password});
 	$self->uri($remember_uri);
@@ -77,7 +75,7 @@ sub account {
 	my ($self) = @_;
 	delete $self->{_error};
 	
-	$debug->println("Calling shared account from register api");
+	$self->{_debug}->println("Calling shared account from register api");
 	my $remember_uri = $self->uri();
 	$self->uri('/_register/api');
 	my $result = $self->_requestObject({'method' => 'me'},'customer');
@@ -88,7 +86,7 @@ sub ping {
 	my ($self) = @_;
 	delete $self->{_error};
 	
-	$debug->println("Calling shared ping");
+	$self->{_debug}->println("Calling shared ping");
 	my $result = $self->_requestSuccess({'method' => 'ping'});
 	return $result;
 }
@@ -97,11 +95,10 @@ sub _send {
 	my ($self,$request,$array) = @_;
 	delete $self->{_error};
 
-	$debug->println("Sending request to ".$self->endpoint());
-
-	my $response = $client->post($request);
-	if ($client->error) {
-		$self->{_error} = "Client error: ".$client->error;
+	$self->{_debug}->println("Sending request to ".$self->endpoint());
+	my $response = $self->{_client}->post($request);
+	if ($self->{_client}->error) {
+		$self->{_error} = "Client error: ".$self->{_client}->error;
 	}
 	elsif (! $response) {
 		$self->{_error} = "No response from server";
@@ -136,8 +133,8 @@ sub _send {
 		};
 		if ($@) {
 			$self->{_error} = "Unparseable response: $@";
-			$debug->println("Unparseable response: $@",'error');
-			$debug->println($response->body(),'debug');
+			$self->{_debug}->println("Unparseable response: $@",'error');
+			$self->{_debug}->println($response->body(),'debug');
 			return undef;
 		}
 		if (! $payload->{success}) {
@@ -207,13 +204,15 @@ sub _requestObject {
 	$request->verbose($self->verbose());
 	$request->url($self->endpoint);
 
-	$debug->println("Requesting $object_name",'trace');
+	$self->{_debug}->println("Requesting $object_name",'trace');
 	foreach my $key (sort keys %{$params}) {
-		$debug->println("Adding param $key => ".$params->{$key});
+		$self->{_debug}->println("Adding param $key => ".$params->{$key});
 		$request->add_param($key,$params->{$key});
 	}
 
+	$self->{_debug}->println($request,'trace');
 	my $envelope = $self->_send($request);
+	$self->{_debug}->println($envelope,'trace');
 	if ($self->{_error}) {
 		return undef;
 	}
@@ -230,22 +229,22 @@ sub _requestArray {
 	my ($self,$params) = @_;
 	delete $self->{_error};
 
-	$debug->println("Request ".$params->{method}." from ".$self->{service}." API",'trace');
+	$self->{_debug}->println("Request ".$params->{method}." from ".$self->{service}." API",'trace');
 	my $request = BostonMetrics::HTTP::Request->new();
 	$request->verbose($self->verbose());
 	$request->url($self->endpoint());
 	
 	#$request->proxy_mode(1);
-	#if ($client->{conduit}->type() eq 'Proxy') {
-	#	$debug->println("Proxy Mode",'notice');
+	#if ($self->{_client}->{conduit}->type() eq 'Proxy') {
+	#	$self->{_debug}->println("Proxy Mode",'notice');
 	#	$request->proxy_mode(1);
 	#}
 	#else {
-	#	$debug->println("Not proxy",'notice');
+	#	$self->{_debug}->println("Not proxy",'notice');
 	#}
 
 	foreach my $key (sort keys %{$params}) {
-		$debug->println("Adding param $key => ".$params->{$key});
+		$self->{_debug}->println("Adding param $key => ".$params->{$key});
 		$request->add_param($key,$params->{$key});
 	}
 
@@ -288,7 +287,7 @@ sub _requestFile {
 	$request->url($self->endpoint);
 
 	foreach my $key (sort keys %{$params}) {
-		$debug->println("Adding param $key => ".$params->{$key});
+		$self->{_debug}->println("Adding param $key => ".$params->{$key});
 		$request->add_param($key,$params->{$key});
 	}
 
@@ -306,12 +305,12 @@ sub _requestFile {
 
 sub client {
 	my $self = shift;
-	my $newclient = shift;
+	my $new_client = shift;
 
-	if (defined($newclient)) {
-		$client = $newclient;
+	if (defined($new_client)) {
+		$self->{_client} = $new_client;
 	}
-	return $client;
+	return $self->{_client};
 }
 
 sub endpoint {
@@ -319,7 +318,7 @@ sub endpoint {
 	my $endpoint = shift;
 
 	if (defined($endpoint)) {
-		$debug->println("Updating endpoint with $endpoint",'trace');
+		$self->{_debug}->println("Updating endpoint with $endpoint",'trace');
 		if ($endpoint =~ /(https?)\:\/\/([^\/]+)(\/.*)/ || $endpoint =~ /(https?)\:\/\/([^\/]+)/) {
 			my $protocol = $1;
 			my $host = $2;
@@ -334,13 +333,13 @@ sub endpoint {
 				$self->port(80);
 			}
 			
-			$debug->println("Endpoint parsed");
+			$self->{_debug}->println("Endpoint parsed");
 		}
 		else {
-			$debug->println("Endpoint $endpoint didnt match",'trace');
+			$self->{_debug}->println("Endpoint $endpoint didnt match",'trace');
 			$self->uri($endpoint);
 		}
-		$debug->println("Set uri to ".$self->uri(),'trace');
+		$self->{_debug}->println("Set uri to ".$self->uri(),'trace');
 	}
 	if ($self->protocol() eq 'https' && $self->port() != 443) {
 		return $self->protocol()."://".$self->host().":".$self->port().$self->uri();
@@ -364,7 +363,7 @@ sub host {
 	my ($self,$host) = @_;
 	if (defined($host)) {
 		$self->{host} = $host;
-		$debug->println("Setting host to $host",'trace');
+		$self->{_debug}->println("Setting host to $host",'trace');
 	}
 	return $self->{host};
 }
@@ -388,9 +387,9 @@ sub verbose {
 	my $self = shift;
 	my $verbose = shift;
 	if (defined($verbose)) {
-		$debug->level($verbose);
+		$self->{_debug}->level($verbose);
 	}
-	return $debug->level();
+	return $self->{_debug}->level();
 }
 
 sub error {
@@ -400,9 +399,9 @@ sub error {
 
 sub debug {
 	my ($self,$message,$level) = @_;
-	$level = $debug->level() unless (defined($level));
-	$debug->println("called with level $level",'trace');
-	$debug->println($message,$level);
+	$level = $self->{_debug}->level() unless (defined($level));
+	$self->{_debug}->println("called with level $level",'trace');
+	$self->{_debug}->println($message,$level);
 }
 
 sub AUTOLOAD {
@@ -414,8 +413,7 @@ sub AUTOLOAD {
 		$self->{_error} = "Not connected";
 		return undef;
 	}
-	$debug->println("Calling $method from ".$self->{service});
-
+	$self->{_debug}->println("Calling $method from ".$self->{service});
 	if (! ref($params)) {
 		$params = {};
 	}
@@ -428,18 +426,18 @@ sub AUTOLOAD {
 		my $object = $self->_requestObject($params,$res_object);
 		return $object;
 	}
-	
+
 	my @objects = $self->_requestArray($params);
 	my $count = @objects;
 	if ($self->{_error}) {
-		$debug->println("Error in $method: ".$self->{_error});
+		$self->{_debug}->println("Error in $method: ".$self->{_error});
 		return undef;
 	}
 	elsif (@objects < 1) {
-		$debug->println("No objects returned");
+		$self->{_debug}->println("No objects returned");
 	}
 	else {
-		$debug->println("Found $count objects");
+		$self->{_debug}->println("Found $count objects");
 	}
 	return @objects;
 }
