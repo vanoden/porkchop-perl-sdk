@@ -200,7 +200,7 @@ sub _requestObject {
 	my ($self,$params,$object_name) = @_;
 	delete $self->{_error};
 
-	my $request = BostonMetrics::HTTP::Request->new();
+	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->verbose($self->verbose());
 	$request->url($self->endpoint);
 
@@ -230,7 +230,7 @@ sub _requestArray {
 	delete $self->{_error};
 
 	$self->{_debug}->println("Request ".$params->{method}." from ".$self->{service}." API",'trace');
-	my $request = BostonMetrics::HTTP::Request->new();
+	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->verbose($self->verbose());
 	$request->url($self->endpoint());
 	
@@ -388,6 +388,7 @@ sub verbose {
 	my $verbose = shift;
 	if (defined($verbose)) {
 		$self->{_debug}->level($verbose);
+		$self->{_client}->verbose($verbose);
 	}
 	return $self->{_debug}->level();
 }
