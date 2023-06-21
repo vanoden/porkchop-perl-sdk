@@ -26,7 +26,7 @@ sub new {
 	$self->host('127.0.0.1');
 	$self->port(443);
 
-	my @available_options = qw (verbose protocol host uri endpoint user_agent);
+	my @available_options = qw (verbose protocol host uri endpoint user_agent client);
 	foreach my $option(@available_options) {
 		if (defined($options->{$option})) {
 			$self->$option($options->{$option});
