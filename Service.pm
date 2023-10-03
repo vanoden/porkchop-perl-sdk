@@ -112,7 +112,12 @@ sub _send {
 	elsif ($response->{headers}->{'Content-Disposition'} =~ /^filename\=(.*)/) {
 		my $payload;
 		$self->{filename} = $1;
-		$self->{tmpfile} = "/tmp/porkchopServiceDownload.".$$;
+		if ($array->[0] =~ /^\?\w[\w\.\_\-\/]*/) {
+			$self->{tmpfile} = $array->[0];
+		}
+		else {
+			$self->{tmpfile} = "/tmp/porkchopServiceDownload.".$$;
+		}
 		$self->{filesize} = length($response->body());
 		open(OUT,">".$self->{tmpfile});
 		if ($! && $! !~ /Inappropriate\sioctl/) {
