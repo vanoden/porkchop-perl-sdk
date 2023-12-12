@@ -9,89 +9,71 @@
 # Load Modules
 use strict;
 use Data::Dumper;
-use Term::ReadKey;
 use lib "../../";
-use BostonMetrics::HTTP::Client;
+use BostonMetrics::Hub;
 use Porkchop::Service::Alert;
 use Porkchop::Service::Monitor;
+use parent "Embedded::TestScript";
+
+my $script = Embedded::Utility->new();
 
 ###############################################
-### User Configurable Parameters			###
+### Usage									###
 ###############################################
-my %config = (
-	'conduit'		=> 'TCP',
-	'log_level'		=> 6,
-	'timeout'		=> 10,
-	'portal_url'	=> 'http://test.spectrosinstruments.com',
-	'agent'			=> 'portal_sync_service/0.1'
-);
+my $usage = $script->usage();
+$usage->description('Show the latest readings for each sensor');
+$usage->example($script->name()." [arguments]");
 
-foreach my $arg (@ARGV) {
-	chomp $arg;
+###############################################
+### Configuration							###
+###############################################
+# Load Config From File if Available
+my $hub = BostonMetrics::Hub->new({'config_file' => $script->locateConfigFile(),'verbose' => $script->parameter('log_level')});
+$script->configure($hub->config());
 
-	if ($arg =~ /^\-\-(\w[\w\-\.\_]*)\=(.*)$/) {
-		my $key = $1;
-		my $val = $2;
-		$key =~ s/\-/\_/g;
-		$config{$key} = $val
-	}
+$script->defaultParameter('conduit','TCP');
+$script->defaultParameter('timeout',10);
+$script->defaultParameter('agent','portal_sync_service/0.1');
+$script->defaultParameter('endpoint','https://test.spectrosinstruments.com');
+
+# Display Parameters and Exit
+if ($script->test_mode()) {
+    $script->displayAllParameters();
+    exit;
 }
+$script->show_version();
+$script->show_usage();
 
 ###############################################
-### Get Portal Credentials                  ###
+### Get Portal Credentials					###
 ###############################################
-my ($login,$password);
-if (defined($config{login})) {
-	$login = $config{login};
-	print "Please Provide Your Portal Password\n";
-}
-else {
-	print "Please Provide Your Portal Credentials\n";
-	print "Login: ";
-	$login = ReadLine(0);
-	chomp $login;
-	print "Password: ";
-}
-ReadMode('noecho');
-$password = ReadLine(0);
-ReadMode('normal');
-chomp $password;
-print "\n";
+$script->getCredentials();
 
 ###############################################
 ### Main Procedure							###
 ###############################################
 # Initialize HTTP Client
-my $client = BostonMetrics::HTTP::Client->new({'conduit' => $config{conduit},'proxy_host' => $config{proxy_host},'proxy_port' => $config{proxy_port}});
-$client->agent($config{'agent'});
-$client->verbose($config{'log_level'});
-$client->timeout($config{'timeout'});
-if ($config{conduit} =~ /proxy/) {
-	$client->proxy($config{proxy_host},$config{proxy_port});
-}
-elsif ($config{conduit}) {
-	$client->conduit($config{conduit});
-}
-die "Error: ".$client->error()."\n" unless($client->connect());
+$script->initClient();
 
 # Initialize Service
 my $alert_service = Porkchop::Service::Alert->new({
 	'ssl'		=> 0,
-	'client'	=> $client,
-	'verbose'	=> $config{'log_level'},
-	'endpoint'	=> $config{'portal_url'}
+	'client'	=> $script->httpClient(),
+	'verbose'	=> $script->parameter('log_level'),
+	'endpoint'	=> $script->parameter('portal_url')
 });
 
 my $monitor_service = Porkchop::Service::Monitor->new({
 	'ssl'		=> 0,
-	'client'	=> $client,
-	'verbose'	=> $config{'log_level'},
-	'endpoint'	=> $config{'portal_url'}
+	'client'	=> $script->httpClient(),
+	'verbose'	=> $script->parameter('log_level'),
+	'endpoint'	=> $script->parameter('portal_url')
 });
 
-die "Authentication failed: ".$alert_service->error()."\n" unless ($alert_service->authenticate($login,$password));
+die "Authentication failed: ".$alert_service->error()."\n" unless ($alert_service->authenticate($script->parameter('login'),$script->parameter('password')));
 
 print "Authenticated\n";
 
 my $collections = $monitor_service->findCollections({'status' => 'ACTIVE'},'collection');
+die $monitor_service->error() if ($monitor_service->error());
 print Dumper $collections->[0];
