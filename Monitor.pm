@@ -51,15 +51,6 @@ sub client {
 	return $client;
 }
 
-sub endpoint {
-	my $self = shift;
-	my $endpoint = shift;
-
-	$self->{endpoint} = $endpoint if (defined($endpoint));
-
-	return $self->{endpoint};
-}
-
 sub ping {
 	my $self = shift;
 	delete $self->{error};

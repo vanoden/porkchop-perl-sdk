@@ -11,11 +11,19 @@ sub new {
 	my $package = shift;
 	my $options = shift;
 
-	$options->{uri} = '/_register/api';
-	my $self = $package->SUPER::new($options);
+	my $self = { };
+	bless $self, $package;
 
+	$self->_init($options);
+}
+
+sub _init {
+	my ($self,$options) = @_;
+
+	$options->{uri} = '/_register/api';
 	$self->{service} = 'Register';
-	return $self;
+
+	$self->SUPER::_init($options);
 }
 
 1

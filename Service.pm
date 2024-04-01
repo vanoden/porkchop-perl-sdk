@@ -31,13 +31,12 @@ sub new {
 sub _init {
 	my ($self,$options) = @_;
 
-	$self->SUPER::_init($options);
-
 	$self->client(BostonMetrics::HTTP::Client->new());
 
 	$self->protocol('https') unless ($self->protocol());
 	$self->host('127.0.0.1') unless ($self->host());
-	$self->port(443) unless ($self->port());
+
+	$self->SUPER::_init($options);
 
 	# Return Package
 	return $self;
@@ -65,6 +64,7 @@ sub _connected {
 	my $self = shift;
 	return 1;
 }
+
 sub authenticate {
 	my ($self,$login,$password) = @_;
 	$self->clearError();
@@ -73,10 +73,12 @@ sub authenticate {
 	my $remember_uri = $self->uri();
 	$self->log("URI WAS ".$remember_uri);
 	$self->uri('/_register/api');
+
 	my $result = $self->_requestSuccess({'method' => 'authenticateSession', 'login' => $login, 'password' => $password});
 	$self->uri($remember_uri);
 	return $result;
 }
+
 sub account {
 	my ($self) = @_;
 	$self->clearError();
@@ -88,6 +90,7 @@ sub account {
 	$self->uri($remember_uri);
 	return $result;
 }
+
 sub ping {
 	my ($self) = @_;
 	$self->clearError();
@@ -135,13 +138,12 @@ sub _send {
 		}
 	}
 	elsif ($response->content_type() ne "application/xml") {
-		print Dumper $response;
 		$self->error("Non object from server: ".$response->content_type());
 	}
 	else {
 		my $payload;
 		eval {
-			$payload = XMLin($response->body,KeyAttr => [],ForceArray => $array);
+			$payload = XMLin($response->body(),KeyAttr => [],ForceArray => $array);
 		};
 		if ($@) {
 			$self->error("Unparseable response: $@");
@@ -149,16 +151,20 @@ sub _send {
 			$self->log($response->body(),'debug');
 			return undef;
 		}
-		if (! $payload->{success}) {
+		if (! $payload) {
+			$self->error("No response from server");
+			return undef;
+		}
+		elsif (! $payload->{success}) {
 			if ($payload->{error}) {
-				$self->error("Application error: ".$payload->error());
+				$self->error("Error returned: ".$payload->{error});
 			}
 			elsif ($payload->{message}) {
-				$self->error("Application error: ".$payload->message());
+				$self->error("Error returned: ".$payload->{message});
 			}
 			else {
 				$self->error("Unhandled service error");
-				print $response->body;
+				print $response->body();
 			}
 			return undef;
 		}
@@ -224,9 +230,9 @@ sub _requestObject {
 
 	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->verbose($self->verbose());
-	$request->url($self->endpoint);
+	$request->url($self->endpoint());
 
-	$self->log("Requesting $object_name",'trace');
+	$self->log("Requesting $object_name",'notice');
 	foreach my $key (sort keys %{$params}) {
 		$self->log("Adding param $key => ".$params->{$key});
 		$request->add_param($key,$params->{$key});
@@ -255,15 +261,6 @@ sub _requestArray {
 	my $request = BostonMetrics::HTTP::Request->new({'verbose' => $self->verbose()});
 	$request->verbose($self->verbose());
 	$request->url($self->endpoint());
-	
-	#$request->proxy_mode(1);
-	#if ($self->client()->{conduit}->type() eq 'Proxy') {
-	#	$self->log("Proxy Mode",'notice');
-	#	$request->proxy_mode(1);
-	#}
-	#else {
-	#	$self->log("Not proxy",'notice');
-	#}
 
 	foreach my $key (sort keys %{$params}) {
 		$self->log("Adding param $key => ".$params->{$key});
@@ -342,7 +339,7 @@ sub endpoint {
 	$self->identifySub();
 
 	if (defined($endpoint)) {
-		$self->log("Updating endpoint with $endpoint",'trace');
+		$self->log("Updating endpoint with $endpoint",'notice');
 		if ($endpoint =~ /(https?)\:\/\/([^\/]+)(\/.*)/ || $endpoint =~ /(https?)\:\/\/([^\/]+)/) {
 			my $protocol = $1;
 			my $host = $2;
@@ -350,14 +347,8 @@ sub endpoint {
 			$self->protocol($protocol);
 			$self->host($host);
 			$self->uri($uri) if (defined($uri));
-			if ($protocol eq 'https') {
-				$self->port(443);
-			}
-			else {
-				$self->port(80);
-			}
 			
-			$self->log("Endpoint parsed");
+			$self->log("Endpoint parsed",'notice');
 		}
 		else {
 			$self->log("Endpoint $endpoint didnt match",'trace');
@@ -365,19 +356,24 @@ sub endpoint {
 		}
 	}
 	if ($self->protocol() eq 'https' && $self->port() != 443) {
+		$self->log("Returning ssl endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'notice');
 		return $self->protocol()."://".$self->host().":".$self->port().$self->uri();
 	}
 	elsif ($self->protocol() eq 'http' && $self->port() != 80) {
+		$self->log("Returning http endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'notice');
 		return $self->protocol()."://".$self->host().":".$self->port().$self->uri();
 	}
-
-	return $self->protocol()."://".$self->host().$self->uri();
+	else {
+		$self->log("Returning endpoint ".$self->protocol()."://".$self->host().$self->uri(),'notice');
+		return $self->protocol()."://".$self->host().$self->uri();
+	}
 }
 
 sub protocol {
 	my ($self,$protocol) = @_;
 	$self->identifySub();
 	if (defined($protocol)) {
+		$self->log("Setting protocol to $protocol",'trace');
 		$self->client()->protocol($protocol);
 	}
 	return $self->client()->protocol();
@@ -387,8 +383,8 @@ sub host {
 	my ($self,$host) = @_;
 	$self->identifySub();
 	if (defined($host)) {
+		$self->log("Setting host to $host",'notice');
 		$self->client()->host($host);
-		$self->log("Setting host to $host",'trace');
 	}
 	return $self->client()->host();
 }
@@ -397,6 +393,7 @@ sub port {
 	my ($self,$port) = @_;
 	$self->identifySub();
 	if (defined($port)) {
+		$self->log("Setting port to $port",'notice');
 		$self->client()->port($port);
 	}
 	return $self->client()->port();
