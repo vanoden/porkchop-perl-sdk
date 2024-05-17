@@ -356,15 +356,15 @@ sub endpoint {
 		}
 	}
 	if ($self->protocol() eq 'https' && $self->port() != 443) {
-		$self->log("Returning ssl endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'notice');
+		$self->log("Returning ssl endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'debug');
 		return $self->protocol()."://".$self->host().":".$self->port().$self->uri();
 	}
 	elsif ($self->protocol() eq 'http' && $self->port() != 80) {
-		$self->log("Returning http endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'notice');
+		$self->log("Returning http endpoint ".$self->protocol()."://".$self->host().":".$self->port().$self->uri(),'debug');
 		return $self->protocol()."://".$self->host().":".$self->port().$self->uri();
 	}
 	else {
-		$self->log("Returning endpoint ".$self->protocol()."://".$self->host().$self->uri(),'notice');
+		$self->log("Returning endpoint ".$self->protocol()."://".$self->host().$self->uri(),'debug');
 		return $self->protocol()."://".$self->host().$self->uri();
 	}
 }
