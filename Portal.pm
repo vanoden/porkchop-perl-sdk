@@ -2,6 +2,8 @@ package Porkchop::Portal;
 
 use strict;
 use Data::Dumper;
+use LWP::UserAgent;
+use lib "../../lib";
 use Porkchop::Session;
 use Porkchop::Monitor;
 use XML::Simple;
