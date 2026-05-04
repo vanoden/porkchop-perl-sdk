@@ -20,7 +20,7 @@ sub new {
 sub _init {
 	my ($self,$options) = @_;
 
-	$options->{uri} = '/_monitor/api';
+	$options->{uri} = '/api/monitor';
 	$self->{service} = 'Monitor';
 
 	$self->SUPER::_init($options);

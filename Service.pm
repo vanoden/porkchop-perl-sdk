@@ -72,7 +72,7 @@ sub authenticate {
 	$self->log("Calling shared authenticate from register api");
 	my $remember_uri = $self->uri();
 	$self->log("URI WAS ".$remember_uri);
-	$self->uri('/_register/api');
+	$self->uri('/api/register/');
 
 	my $result = $self->_requestSuccess({'method' => 'authenticateSession', 'login' => $login, 'password' => $password});
 	$self->uri($remember_uri);
@@ -139,6 +139,7 @@ sub _send {
 	}
 	elsif ($response->content_type() ne "application/xml") {
 		$self->error("Non object from server: ".$response->content_type());
+		$self->error("Response was: ".$response->body());
 	}
 	else {
 		my $payload;
@@ -415,6 +416,10 @@ sub uri {
 	elsif ($uri =~ /^(_\w[\w\.\-_\/]*)\??/){
 		$self->log("Set uri to ".$self->{uri},'trace');
 		return $self->{uri} = "/".$1;
+	}
+	elsif ($uri =~ /^(\/api\/\w[\w\.\-_*\/]*)/) {
+		$self->{uri} = $1;
+		$self->log("Set uri to ".$self->{uri},'trace');
 	}
 	elsif (defined($uri)) {
 		my ($package,$file,$line,$sub) = caller(1);
