@@ -112,6 +112,9 @@ sub _send {
 	elsif (! $response) {
 		$self->error("No response from server");
 	}
+	elsif ($response->code == 404) {
+		$self->error("Server 404: Invalid endpoint: ".$self->endpoint());
+	}
 	elsif ($response->code != 200) {
 		$self->error("Server error [".$response->code."] ".$response->reason());
 	}
