@@ -15,6 +15,7 @@ use BostonMetrics::HTTP::Client;
 use BostonMetrics::HTTP::Request;
 use BostonMetrics::HTTP::Response;
 use Data::Dumper;
+use parent 'Embedded::BaseClass';
 
 our $VERSION = '0.03';
 
@@ -43,6 +44,11 @@ sub new {
 	return $self;
 }
 
+#** @method client
+# @brief Get or set the HTTP client.
+# @param $newclient Optional client to set.
+# @return The current client.
+#
 sub client {
 	my $self = shift;
 	my $newclient = shift;
@@ -51,6 +57,9 @@ sub client {
 	return $client;
 }
 
+#** @method ping
+# @brief Check connectivity to the Porkchop Web API.
+# @return 1 on success, undef on failure.
 sub ping {
 	my $self = shift;
 	delete $self->{error};
@@ -83,6 +92,12 @@ sub ping {
 	}
 	return undef;
 }
+
+#** @method addAsset
+# @brief Add an asset to the Porkchop Web API.
+# @param $parameters Asset parameters.
+# @return The result of sending the request.
+#
 sub addAsset {
 	my ($self,$parameters) = @_;
 	delete $self->{error};
@@ -101,6 +116,11 @@ sub addAsset {
 	return $self->_send($request);
 }
 
+#** @method getAsset
+# @brief Get an asset from the Porkchop Web API.
+# @param $code Asset code.
+# @return The asset on success, undef on failure.
+#
 sub getAsset {
 	my ($self,$code) = @_;
 	delete $self->{error};
@@ -142,6 +162,12 @@ sub getAsset {
 	}
 	return undef;
 }
+
+#** @method getHub
+# @brief Get a hub from the Porkchop Web API.
+# @param $hub Hub identifier.
+# @return The hub on success, undef on failure.
+#
 sub getHub {
 	my ($self,$hub) = @_;
 	delete $self->{error};
@@ -175,6 +201,12 @@ sub getHub {
 	}
 	return undef;
 }
+
+#** @method addMessage
+# @brief Add a message to the Porkchop Web API.
+# @param $message Message parameters.
+# @return 1 on success, undef on failure.
+#
 sub addMessage {
 	my ($self,$message) = @_;
 	delete $self->{error};
@@ -217,6 +249,11 @@ sub addMessage {
 	return undef;
 }
 
+#** @method addReading
+# @brief Add a reading to the Porkchop Web API.
+# @param $reading Reading parameters.
+# @return 1 on success, undef on failure.
+#
 sub addReading {
 	my ($self,$reading) = @_;
 	$self->{error} = '';
@@ -261,6 +298,12 @@ sub addReading {
 	return undef;
 }
 
+#** @method _send
+# @brief Send a request to the Porkchop Web API.
+# @param $request HTTP request to send.
+# @param $object_name Optional payload object name to return.
+# @return The named payload object, 1 on success, or undef on failure.
+#
 sub _send {
 	my ($self,$request,$object_name) = @_;
 
