@@ -229,7 +229,7 @@ sub addReading {
 	$request->add_param("asset_code",$reading->{sensor}->{asset_code});
 	$request->add_param("sensor_code",$reading->{sensor}->{code});
 	$request->add_param("value",$reading->{value});
-	$request->add_param("date_reading",$reading->{timestamp});
+	$request->add_param("date_reading",$reading->timestamp());
 
 	my $response = $client->load($request);
 	
